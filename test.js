@@ -3,12 +3,14 @@ import app from './server.js';
 import mongoose from 'mongoose';
 import TextureItem from './src/models/textureItemModel.js';
 import User from './src/models/userModel.js'; // Import User model
+import Cost from './src/models/costModel.js';
 
  
 const request = supertest(app);
+var createdItemId;
 
 describe('Texture Items API', () => {
-  let createdItemId;
+  
 
   afterAll(async () => {
     if (createdItemId) {
@@ -27,7 +29,6 @@ describe('Texture Items API', () => {
 
     const response = await request.post('/api/items').send(newItem);
     createdItemId = response.body._id;
-    console.log(typeof(createdItemId))
 
     expect(response.status).toBe(201);
     expect(response.body.name).toBe(newItem.name);
@@ -131,7 +132,6 @@ describe('User API', () => {
   });
 });
 describe('Purchase API', () => {
-  let createdItemId;
   let createdUserId;
   let testItemQuantity = 100;
 
@@ -157,7 +157,6 @@ describe('Purchase API', () => {
       let itemResponse = await request.post('/api/items').send(newItem);
       createdItemId = itemResponse.body._id;
       let quantity = itemResponse.body;
-     console.log(quantity)
   });
 
   afterAll(async () => {
@@ -187,7 +186,6 @@ describe('Purchase API', () => {
     };
 
     const response = await request.post('/api/purchase').send(purchaseData);
-    console.log(response.body);
 
     expect(response.status).toBe(404); // Assuming you return a 404 when an item is not found
 });
@@ -205,6 +203,65 @@ describe('Purchase API', () => {
   // Add more tests as necessary, for instance, invalid input, server errors, etc.
 });
 
+describe('Cost API', () => {
+  let createdCostId;
+
+  afterAll(async () => {
+      if (createdCostId) {
+          // Cleanup: Delete the created cost
+          await request.delete(`/cost/${createdCostId}`);
+      }
+  });
+
+  it('should create a cost for an item', async () => {
+      const newItem = {
+          name: 'Test Texture',
+          description: 'A test texture item',
+          price: 10.99,
+          inStock: true,
+          quantity: 100,
+      };
+
+      const itemResponse = await request.post('/api/items').send(newItem);
+      const newCost = {
+          itemId: itemResponse.body._id, // Use the item ID from the response
+          costPrice: 5.99, // Adjust cost and selling prices as needed
+          sellingPrice: 15.99,
+      };
+
+      const response = await request.post('/api/cost').send(newCost);
+      createdCostId = response.body.cost.itemId; // Store the created cost ID for cleanup
+
+      expect(response.status).toBe(201);
+      expect(response.body.message).toBe('Cost created successfully');
+  });
+
+  it('should get the cost of an item by item ID', async () => {
+      // Use the createdCostId to retrieve the cost
+      const response = await request.get(`/api/cost/${createdCostId}`);
+      expect(response.status).toBe(200);
+      expect(response.body.itemId).toBe(createdCostId);
+  });
+
+  it('should update the cost of an item by item ID', async () => {
+      // Use the createdCostId to update the cost
+      const updatedCost = {
+          costPrice: 6.99, // Update cost and selling prices as needed
+          sellingPrice: 16.99,
+      };
+
+      const response = await request.put(`/api/cost/${createdCostId}`).send(updatedCost);
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe('Cost updated successfully');
+  });
+
+  it('should delete the cost of an item by item ID', async () => {
+      // Use the createdCostId to delete the cost
+      const response = await request.delete(`/api/cost/${createdCostId}`);
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe('Cost deleted successfully');
+  });
+});
 afterAll(async () => {
   // Disconnect from MongoDB after all tests are done
   await mongoose.disconnect();
