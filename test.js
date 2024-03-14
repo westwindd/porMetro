@@ -262,6 +262,105 @@ describe('Cost API', () => {
       expect(response.body.message).toBe('Cost deleted successfully');
   });
 });
+describe('Order API', () => {
+    let createdOrderId;
+    let createdUserId;
+    it('should create a new user', async () => {
+        const newUser = {
+            username: 'tes1tuser',
+            password: 'test123',
+            personalInfo: {
+                fullName: 'Test User',
+                dateOfBirth: '1990-01-01',
+                gender: 'Other',
+                nationality: 'Testland'
+            },
+            contactInfo: {
+                email: 'testuser@example.com',
+                phone: '1234567890',
+                address: {
+                    street: '123 Test St',
+                    city: 'Testville',
+                    state: 'TS',
+                    zipCode: '12345',
+                    country: 'Testland'
+                }
+            }
+        };
+  
+        const response = await request.post('/api/users').send(newUser);
+        createdUserId = response.body.userId;
+  
+        expect(response.status).toBe(201);
+        expect(response.body.message).toBe('User created successfully');
+    });
+
+    it('should create a new order', async () => {
+        const newOrder = {
+            userId: createdUserId,
+            role: 'user',
+            itemId: '65bc2214f28d4ab89cbcb53b',
+            clientName: 'John Doe',
+            tasks: [
+                { name: 'Task 1', completed: false },
+                { name: 'Task 2', completed: false }
+            ],
+            priority: 'Medium',
+            totalPrice: 21.98,
+        };
+
+        const response = await request.post('/api/orders').send(newOrder);
+        console.log(response.body)
+        expect(response.status).toBe(201);
+        expect(response.body.message).toBe('Order created successfully');
+        expect(response.body.order).toHaveProperty('_id');
+        expect(response.body.order.clientName).toBe(newOrder.clientName);
+        expect(response.body.order.tasks.length).toBe(newOrder.tasks.length);
+        expect(response.body.order.priority).toBe(newOrder.priority);
+        createdOrderId = response.body.order._id;
+    });
+
+    it('should retrieve all orders', async () => {
+        const response = await request.get('/api/orders');
+
+        expect(response.status).toBe(200);
+        expect(Array.isArray(response.body)).toBeTruthy();
+    });
+
+    it('should retrieve an order by ID', async () => {
+        const response = await request.get(`/api/orders/${createdOrderId}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body._id).toBe(createdOrderId);
+    });
+
+    it('should update an order by ID', async () => {
+        const updatedOrder = {
+            tasks: [
+                { name: 'Task 1', completed: true },
+                { name: 'Task 2', completed: false }
+            ],
+            priority: 'High',
+            totalPrice: 32.97,
+        };
+
+        const response = await request
+            .put(`/api/orders/${createdOrderId}`)
+            .send(updatedOrder);
+
+        expect(response.status).toBe(200);
+        expect(response.body.message).toBe('Order updated successfully');
+        expect(response.body.order.tasks[0].completed).toBe(true);
+        expect(response.body.order.priority).toBe(updatedOrder.priority);
+    });
+
+ /*    it('should delete an order by ID', async () => {
+        const response = await request.delete(`/api/orders/${createdOrderId}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.message).toBe('Order deleted successfully');
+    }); */
+});
 afterAll(async () => {
   // Disconnect from MongoDB after all tests are done
   await mongoose.disconnect();
