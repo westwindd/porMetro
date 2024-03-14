@@ -6,9 +6,7 @@ import textureItemRoutes from './src/routes/textureItemRoutes.js';
 import purchaseRoutes from './src/routes/purchaseRoutes.js';
 import userRoutes from './src/routes/userRoutes.js';
 import costRoutes from './src/routes/costRoutes.js';
-
-
-
+import orderRoutes from './src/routes/orderRoutes.js';
 
 dotenv.config();
 const app = express();
@@ -22,6 +20,8 @@ app.use('/api', costRoutes);
 app.use('/api', textureItemRoutes);
 app.use('/api', purchaseRoutes);
 app.use('/api', userRoutes);
+app.use('/api', orderRoutes);
+
 
 
 export default app;
